@@ -1,0 +1,26 @@
+{
+  "name": "glamcheck",
+  "version": "0.1.0",
+  "description": "Find and prove code that breaks under Ethereum's Glamsterdam gas repricing (EIP-8037 / EIP-8038 / EIP-2780).",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scan": "tsx src/rules/semgrep.ts",
+    "diff": "tsx src/runner/diff.ts",
+    "replay": "tsx src/replay/replay.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:rules": "node --import tsx --test tests/rules.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "tsx": "4.23.15",
+    "viem": "2.57.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "7.0.2"
+  }
+}

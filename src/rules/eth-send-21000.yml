@@ -1,0 +1,89 @@
+rules:
+  - id: glamcheck.eth-send-21000
+    message: >-
+      Gas limit of exactly 21,000 for an ETH send. Under Glamsterdam a transfer to an account that does not exist yet also
+      pays new-account state gas (25,000 -> 183,600, EIP-8037 / EIP-2780), so 21,000 fails for fresh recipients.
+    severity: WARNING
+    languages: [go]
+    metadata: &meta2
+      glamcheck_pattern: 2
+      eip: EIP-8037 / EIP-2780
+      severity_hint: breaks-on-transfer
+      fix_hint: Estimate gas per recipient, or check the recipient exists (nonce, balance, code) and budget new-account gas.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '$T{..., GasLimit: $N, ...}'
+          - pattern: '$X.GasLimit = $N'
+          - pattern: '$T{..., Gas: $N, ...}'
+          - pattern: 'types.NewTransaction($A, $B, $C, $N, ...)'
+          - patterns:
+              - pattern-either:
+                  - pattern: 'const $NAME = $N'
+                  - pattern: 'const $NAME $TY = $N'
+                  - pattern: 'var $NAME = $N'
+              - metavariable-regex:
+                  metavariable: $NAME
+                  regex: >-
+                    (?i).*gas
+              # Floors and caps (MinGasLimit = 21_000) are not sends.
+              - metavariable-regex:
+                  metavariable: $NAME
+                  regex: >-
+                    (?i)(?!.*(min|max|floor|cap))
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(21000|21_000|0x5208)n?["']?$
+  - id: glamcheck.eth-send-21000-js
+    message: >-
+      Gas limit of exactly 21,000 for an ETH send. Under Glamsterdam a transfer to an account that does not exist yet also
+      pays new-account state gas (25,000 -> 183,600, EIP-8037 / EIP-2780), so 21,000 fails for fresh recipients.
+    severity: WARNING
+    languages: [typescript, javascript]
+    metadata: *meta2
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '{..., gasLimit: $N, ...}'
+          - pattern: '{..., gas: $N, ...}'
+          - pattern: '{..., gasLimit: BigInt($N), ...}'
+          - pattern: '{..., gas: BigInt($N), ...}'
+          - pattern: '{..., gasLimit: $B.from($N), ...}'
+          - patterns:
+              - pattern-either:
+                  - pattern: 'const $NAME = $N'
+                  - pattern: 'let $NAME = $N'
+              - metavariable-regex:
+                  metavariable: $NAME
+                  regex: >-
+                    (?i).*gas
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(21000|21_000|0x5208)n?["']?$
+  - id: glamcheck.eth-send-21000-py
+    message: >-
+      Gas limit of exactly 21,000 for an ETH send. Under Glamsterdam a transfer to an account that does not exist yet also
+      pays new-account state gas (25,000 -> 183,600, EIP-8037 / EIP-2780), so 21,000 fails for fresh recipients.
+    severity: WARNING
+    languages: [python]
+    metadata: *meta2
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '{..., "gas": $N, ...}'
+          - pattern: '{..., "gasLimit": $N, ...}'
+          - patterns:
+              - pattern: '$NAME = $N'
+              - metavariable-regex:
+                  metavariable: $NAME
+                  regex: >-
+                    (?i).*gas
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(21000|21_000|0x5208)n?["']?$

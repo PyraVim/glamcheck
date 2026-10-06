@@ -1,0 +1,80 @@
+rules:
+  - id: glamcheck.one-dim-gas-constant
+    message: >-
+      Round gas constant $NAME = $N in what looks like a fee or verification model. Glamsterdam makes gas
+      two-dimensional (execution + state, EIP-8037), so one-dimensional constants need re-benchmarking.
+    severity: INFO
+    languages: [solidity]
+    metadata: &meta6
+      glamcheck_pattern: 6
+      eip: EIP-8037
+      severity_hint: degraded
+      fix_hint: Re-benchmark under Amsterdam and update the constant or the estimator; avoid fixed one-dimensional gas.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    # Semgrep's Solidity parser rejects visibility in constant patterns, so match the declaration by regex.
+    patterns:
+      - pattern-regex: '\b(?:uint|int)\d*\s+(?:\w+\s+)*?constant\s+(?:\w+\s+)*?(?<NAME>\w+)\s*=\s*(?<N>[0-9_]+)\s*;'
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*gas
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*(overhead|verif|l1|calldata|fee|cost|paymaster|post_?op|pre_?verif|intrinsic|buffer|per_|base)
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^[1-9][0-9_]*0{3}$
+  - id: glamcheck.one-dim-gas-constant-code
+    message: >-
+      Round gas constant $NAME = $N in what looks like a fee or verification model. Glamsterdam makes gas
+      two-dimensional (execution + state, EIP-8037), so one-dimensional constants need re-benchmarking.
+    severity: INFO
+    languages: [typescript, javascript, go]
+    metadata: *meta6
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: 'const $NAME = $N'
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*gas
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*(overhead|verif|l1|calldata|fee|cost|paymaster|post_?op|pre_?verif|intrinsic|buffer|per_|base)
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^[1-9][0-9_]*0{3}$
+  - id: glamcheck.one-dim-gas-constant-py
+    message: >-
+      Round gas constant $NAME = $N in what looks like a fee or verification model. Glamsterdam makes gas
+      two-dimensional (execution + state, EIP-8037), so one-dimensional constants need re-benchmarking.
+    severity: INFO
+    languages: [python]
+    metadata: *meta6
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern: '$NAME = $N'
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            ^[A-Z0-9_]+$
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*gas
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: >-
+            (?i).*(overhead|verif|l1|calldata|fee|cost|paymaster|post_?op|pre_?verif|intrinsic|buffer|per_|base)
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^[1-9][0-9_]*0{3}$

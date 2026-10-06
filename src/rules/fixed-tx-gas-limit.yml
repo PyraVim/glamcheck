@@ -1,0 +1,68 @@
+rules:
+  - id: glamcheck.fixed-tx-gas-limit
+    message: >-
+      Fixed gas limit $N on a transaction. Glamsterdam (EIP-8037) raises state-creation costs (CREATE 32,000 -> 183,600,
+      new slot 20,000 -> 97,920, code deposit 200 -> 1,530 per byte), so a limit sized for today's costs can run out on
+      deploys, factory calls and first writes. Measure under Amsterdam before reporting.
+    severity: WARNING
+    languages: [go]
+    metadata: &meta1
+      glamcheck_pattern: 1
+      eip: EIP-8037
+      severity_hint: breaks-on-deploy
+      fix_hint: Estimate gas per transaction (eth_estimateGas) with the current fixed value as a floor plus headroom.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '$T{..., GasLimit: $N, ...}'
+          - pattern: '$X.GasLimit = $N'
+          - pattern: 'types.NewTransaction($A, $B, $C, $N, ...)'
+          - pattern: 'types.NewContractCreation($A, $B, $N, ...)'
+          - patterns:
+              - pattern: '$T{..., Gas: $N, ...}'
+              - metavariable-regex:
+                  metavariable: $T
+                  regex: >-
+                    types\.(LegacyTx|DynamicFeeTx|AccessListTx|BlobTx|SetCodeTx)
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(?!(21000|21_000|0x5208)n?["']?$)(0x[0-9a-fA-F]+|[1-9][0-9_]*)n?["']?$
+  - id: glamcheck.fixed-tx-gas-limit-js
+    message: >-
+      Fixed gas limit $N on a transaction or network config. Glamsterdam (EIP-8037) raises state-creation costs, so a
+      limit sized for today's costs can run out on deploys, factory calls and first writes. Measure under Amsterdam.
+    severity: WARNING
+    languages: [typescript, javascript]
+    metadata: *meta1
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '{..., gasLimit: $N, ...}'
+          - pattern: '{..., gas: $N, ...}'
+          - pattern: '{..., gasLimit: BigInt($N), ...}'
+          - pattern: '{..., gas: BigInt($N), ...}'
+          - pattern: '{..., gasLimit: $B.from($N), ...}'
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(?!(21000|21_000|0x5208)n?["']?$)(0x[0-9a-fA-F]+|[1-9][0-9_]*)n?["']?$
+  - id: glamcheck.fixed-tx-gas-limit-py
+    message: >-
+      Fixed gas limit $N in a web3.py transaction. Glamsterdam (EIP-8037) raises state-creation costs, so a limit sized
+      for today's costs can run out on deploys, factory calls and first writes. Measure under Amsterdam.
+    severity: WARNING
+    languages: [python]
+    metadata: *meta1
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    patterns:
+      - pattern-either:
+          - pattern: '{..., "gas": $N, ...}'
+          - pattern: '{..., "gasLimit": $N, ...}'
+      - metavariable-regex:
+          metavariable: $N
+          regex: >-
+            ^["']?(?!(21000|21_000|0x5208)n?["']?$)(0x[0-9a-fA-F]+|[1-9][0-9_]*)n?["']?$

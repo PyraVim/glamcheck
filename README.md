@@ -1,0 +1,94 @@
+# glamcheck
+
+Find and prove code that breaks under Ethereum's Glamsterdam gas repricing (EIP-8037, EIP-8038, EIP-2780). Static rules find the call sites; a Foundry test diff and a transaction replay show whether they actually fail, with the exact command and its output.
+
+Glamsterdam went live on Sepolia on 2026-10-06 at 13:53:36 UTC. Mainnet is not scheduled yet.
+
+## What Glamsterdam breaks (measured)
+
+Every number below was measured, not taken from the EIP tables.
+
+| what | measured | where |
+|---|---|---|
+| ETH transfer to an address that does not exist yet | uses 204,600 gas | real client, Platåberget devnet (Glamsterdam since genesis) |
+| the same transfer sent with a 21,000 gas limit | included and fails (status 0): the sender pays the fee, the recipient gets nothing; it is not rejected at submission | real client, Platåberget devnet |
+| ETH transfer to an existing account | 21,000 (unchanged) | Sepolia node, eth_estimateGas |
+| zero-value transfer (existing or fresh address) | 15,000 | Sepolia node, eth_estimateGas |
+| self-transfer | 12,000 | Sepolia node and Platåberget |
+| each additional new storage slot written in a call | 110,026 gas in total | Sepolia node, eth_estimateGas |
+| ERC-4337: first use of a nonce key (EntryPoint v0.7 nonce update) vs a reused key | 98,657 more (17,134 more before the fork) | Sepolia node, eth_estimateGas of `incrementNonce` |
+| a 175,000-gas contract deployment that used 141,905 before the fork | estimates at 629,945 now | Sepolia node, eth_estimateGas |
+| cold SLOAD / warm SLOAD / cold BALANCE | 2,100 / 100 / 3,000 | Sepolia node opcode trace; same on Foundry 1.8.3 |
+| Sepolia, same-length windows before vs after the fork | tx failure rate 1.82% to 10.17%; txs that burned their whole gas limit 0.11% to 1.79% | all Sepolia transactions, first hours after the fork |
+
+What tends to break, in order of how often we saw it:
+
+1. Fixed gas limits on state-creating transactions: deployments, factory calls, first writes to new storage.
+2. ETH sends with a fixed 21,000 gas limit to addresses that may not exist yet (faucets, payouts, airdrops).
+3. ERC-4337 apps that hardcode `verificationGasLimit` and open a new nonce key per userOp: in EntryPoint v0.7 the first use of a key writes a new storage slot inside the verification gas window, and the op fails with `AA26 over verificationGasLimit`.
+4. Hardcoded gas forwarded to calls (`{gas: N}`) whose callee writes new storage or deploys.
+
+Not seen to break: `.transfer()`/`.send()` to receivers that fit inside the 2,300 stipend today. Cold SLOAD did not change, and no such case flipped in our runs. The rule for it is kept for review only.
+
+## Tooling traps
+- anvil's `eth_estimateGas` on an Amsterdam fork returns 21,000 for a transfer to a new account (which needs 204,600). Estimate against a real Glamsterdam node, or measure by submitting. Reported: https://github.com/foundry-rs/foundry/issues/17428
+- `cast run` before Foundry 1.8.5 replays post-fork Sepolia transactions under the previous rules unless you pass `--evm-version amsterdam`. Fixed in 1.8.5.
+- For a transaction that already failed on a Glamsterdam chain, the node's own `debug_traceTransaction` is the source of truth for where it ran out of gas.
+
+## Requirements
+- Foundry 1.8.5 or later (`forge test --hardfork amsterdam`, `cast run --evm-version amsterdam`). Set `FOUNDRY_BIN` if forge is not on PATH.
+- semgrep with Solidity support.
+- Node 20 or later, then `npm install`.
+
+## Check your own repo
+
+1. Static scan (Solidity, TypeScript/JavaScript, Python, Go):
+   ```
+   npx tsx src/rules/semgrep.ts /path/to/your/repo
+   ```
+   Hits are candidates. Confirm them with step 2 or 3 before acting.
+
+2. Foundry suite under Amsterdam execution rules (only the runtime changes; the compile target does not):
+   ```
+   npx tsx src/runner/diff.ts /path/to/your/foundry/project
+   ```
+   Lists tests that pass today and fail under Amsterdam, and traces each one to the call that ran out of gas. Runs with `FOUNDRY_FFI=false`.
+
+3. Replay a mined pre-fork transaction under Amsterdam rules and measure the gas it would need:
+   ```
+   SEPOLIA_RPC=https://your-sepolia-rpc npx tsx src/replay/replay.ts 0x<txhash>
+   ```
+   Writes the commands and output to `glamcheck-out/`.
+
+4. Settle the new-account question on a devnet yourself (sends three tiny transactions from a throwaway testnet keystore account; dry run by default):
+   ```
+   bash scripts/probe-new-account.sh                     # dry run
+   bash scripts/probe-new-account.sh --send --account <keystore account>
+   ```
+
+Scanning or building someone else's repository runs their code: do it in a sandbox or VM, never on a machine with real keys.
+
+## Rules
+
+| rule | pattern | EIP |
+|---|---|---|
+| `glamcheck.fixed-tx-gas-limit` (Go, TS/JS, Python) | fixed gas limit on a transaction or network config | EIP-8037 |
+| `glamcheck.eth-send-21000` (Go, TS/JS, Python) | exactly 21,000 gas for an ETH send | EIP-8037 / EIP-2780 |
+| `glamcheck.solidity-call-gas` | hardcoded `{gas: N}` forwarded to a call | EIP-8037 / EIP-8038 |
+| `glamcheck.gasleft-logic` | logic built on `gasleft()` | EIP-8037 |
+| `glamcheck.one-dim-gas-constant` | round gas constants in fee or verification models | EIP-8037 |
+| `glamcheck.solidity-transfer-send` | `.transfer()` / `.send()` (review only) | EIP-8038 |
+
+Each rule has positive and negative fixtures in `fixtures/rules/`. `npm test` runs the rule tests and the Foundry diff tests.
+
+## Upstream issues
+- Foundry, anvil estimate for transfers to new accounts: https://github.com/foundry-rs/foundry/issues/17428
+- ethersphere/bee, fixed 175,000 chequebook deployment gas: https://github.com/ethersphere/bee/issues/5650
+- pk910/PoWFaucet, example config `ethTxGasLimit: 21000`: https://github.com/pk910/PoWFaucet/issues/540
+- wevm/viem, the default nonce key opens a new EntryPoint nonce slot on every userOp (Discussion): https://github.com/wevm/viem/discussions/5198
+
+## Contact
+[contact]
+
+## License
+MIT, see LICENSE.

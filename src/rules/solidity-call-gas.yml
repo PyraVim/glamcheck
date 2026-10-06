@@ -1,0 +1,16 @@
+rules:
+  - id: glamcheck.solidity-call-gas
+    message: >-
+      Hardcoded gas forwarded to a call. Glamsterdam raises state access (EIP-8038) and state creation (EIP-8037) costs, so
+      a fixed forward that fits today can run out. Check what the callee does under Amsterdam.
+    severity: WARNING
+    languages: [solidity]
+    metadata:
+      glamcheck_pattern: 4
+      eip: EIP-8037 / EIP-8038
+      severity_hint: degraded
+      fix_hint: Make the forwarded gas configurable or measured, with margin for Amsterdam costs.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    # Semgrep's Solidity parser does not accept call-option patterns, so this one is a regex.
+    pattern-regex: '\{[^{}]*\bgas\s*:\s*(0x[0-9a-fA-F]+|[0-9][0-9_]*)\s*[,}][^{}]*?\}?\s*\('

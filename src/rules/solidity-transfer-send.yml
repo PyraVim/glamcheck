@@ -1,0 +1,18 @@
+rules:
+  - id: glamcheck.solidity-transfer-send
+    message: >-
+      .transfer()/.send() forwards a fixed 2,300 gas stipend. For review only: no receiver that fits in 2,300 today was
+      measured to fail under Glamsterdam (cold SLOAD is unchanged at 2,100 on Foundry 1.8.3 and on Sepolia). Storage
+      writes already fail today. Confirm with a test run before reporting.
+    severity: WARNING
+    languages: [solidity]
+    metadata:
+      glamcheck_pattern: 3
+      eip: EIP-8038
+      severity_hint: review-only
+      fix_hint: Use call{value:} with a success check and a reentrancy guard, or a pull-payment pattern.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    pattern-either:
+      - pattern: '$R.transfer($A)'
+      - pattern: '$R.send($A)'

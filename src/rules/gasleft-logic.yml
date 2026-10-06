@@ -1,0 +1,22 @@
+rules:
+  - id: glamcheck.gasleft-logic
+    message: >-
+      Logic built on gasleft(). Under Glamsterdam state gas draws from a reservoir first, so gasleft() differences can go
+      negative and guards sized for today's costs shift (EIP-8037). Review reimbursement and "enough gas" checks.
+    severity: WARNING
+    languages: [solidity]
+    metadata:
+      glamcheck_pattern: 5
+      eip: EIP-8037
+      severity_hint: degraded
+      fix_hint: Rework gas measurement for two-dimensional gas; add margins to gasleft() guards and re-test under Amsterdam.
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/__tests__/**", "*_test.go", "*.t.sol", "*.test.*", "*.spec.*", "**/node_modules/**", "**/lib/**", "**/mocks/**", "**/mock/**", "**/dist/**", "**/build/**", "**/vendor/**"]
+    pattern-either:
+      - pattern: 'gasleft() < $X'
+      - pattern: 'gasleft() > $X'
+      - pattern: 'gasleft() >= $X'
+      - pattern: 'gasleft() <= $X'
+      - pattern: '$X - gasleft()'
+      - pattern: 'gasleft() - $X'
+      - pattern: '$T $V = gasleft();'
