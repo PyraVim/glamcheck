@@ -31,7 +31,7 @@ What tends to break, in order of how often we saw it:
 Not seen to break: `.transfer()`/`.send()` to receivers that fit inside the 2,300 stipend today. Cold SLOAD did not change, and no such case flipped in our runs. The rule for it is kept for review only.
 
 ## Tooling traps
-- anvil's `eth_estimateGas` on an Amsterdam fork returns 21,000 for a transfer to a new account (which needs 204,600). Estimate against a real Glamsterdam node, or measure by submitting. Reported: https://github.com/foundry-rs/foundry/issues/17428
+- anvil's `eth_estimateGas` on an Amsterdam fork returned 21,000 for a transfer to a new account (which needs 204,600). Reported in https://github.com/foundry-rs/foundry/issues/17428 and fixed within a day in https://github.com/foundry-rs/foundry/pull/17432 (merged Oct 7): anvil now estimates transfers by executing them. Until your Foundry build includes the fix, check estimates against a real Glamsterdam node, or measure by submitting.
 - `cast run` before Foundry 1.8.5 replays post-fork Sepolia transactions under the previous rules unless you pass `--evm-version amsterdam`. Fixed in 1.8.5.
 - For a transaction that already failed on a Glamsterdam chain, the node's own `debug_traceTransaction` is the source of truth for where it ran out of gas.
 
@@ -82,7 +82,7 @@ Scanning or building someone else's repository runs their code: do it in a sandb
 Each rule has positive and negative fixtures in `fixtures/rules/`. `npm test` runs the rule tests and the Foundry diff tests.
 
 ## Upstream issues
-- Foundry, anvil estimate for transfers to new accounts: https://github.com/foundry-rs/foundry/issues/17428
+- Foundry, anvil estimate for transfers to new accounts: https://github.com/foundry-rs/foundry/issues/17428 (fixed in https://github.com/foundry-rs/foundry/pull/17432, merged Oct 7)
 - ethersphere/bee, fixed 175,000 chequebook deployment gas: https://github.com/ethersphere/bee/issues/5650
 - pk910/PoWFaucet, example config `ethTxGasLimit: 21000`: https://github.com/pk910/PoWFaucet/issues/540
 - wevm/viem, the default nonce key opens a new EntryPoint nonce slot on every userOp (Discussion): https://github.com/wevm/viem/discussions/5198
