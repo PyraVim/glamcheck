@@ -88,7 +88,9 @@ Each rule has positive and negative fixtures in `fixtures/rules/`. `npm test` ru
 - wevm/viem, the default nonce key opens a new EntryPoint nonce slot on every userOp (Discussion): https://github.com/wevm/viem/discussions/5198
 
 ## Contact
-[contact]
+Need your code checked before mainnet? I do fixed-price Glamsterdam readiness checks: I find what breaks in your contracts, scripts and gas settings, measure it on a real node, and send the fix with tests.
+
+- Email: pyravim.dev@gmail.com
 
 ## License
 MIT, see LICENSE.
