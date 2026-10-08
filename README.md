@@ -19,7 +19,7 @@ Every number below was measured, not taken from the EIP tables.
 | ERC-4337: first use of a nonce key (EntryPoint v0.7 nonce update) vs a reused key | 98,657 more (17,134 more before the fork) | Sepolia node, eth_estimateGas of `incrementNonce` |
 | a 175,000-gas contract deployment that used 141,905 before the fork | estimates at 629,945 now | Sepolia node, eth_estimateGas |
 | cold SLOAD / warm SLOAD / cold BALANCE | 2,100 / 100 / 3,000 | Sepolia node opcode trace; same on Foundry 1.8.3 |
-| Sepolia, same-length windows before vs after the fork | tx failure rate 1.82% to 10.17%; txs that burned their whole gas limit 0.11% to 1.79% | all Sepolia transactions, first hours after the fork |
+| Sepolia, same-length windows before vs after the fork | tx failure rate 1.91% to 10.97%; txs that burned their whole gas limit 0.15% to 2.02% | all Sepolia transactions, the first 10.5 hours after the fork against the 10.5 hours before |
 
 What tends to break, in order of how often we saw it:
 
@@ -67,6 +67,36 @@ Not seen to break: `.transfer()`/`.send()` to receivers that fit inside the 2,30
    ```
 
 Scanning or building someone else's repository runs their code: do it in a sandbox or VM, never on a machine with real keys.
+
+## Run it in CI (GitHub Action)
+
+```yaml
+- uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+  with:
+    submodules: recursive
+- uses: PyraVim/glamcheck@<commit sha>
+  with:
+    fail-on: flips
+```
+
+What it does:
+1. Runs the static rules on `path` and adds a warning annotation on each hit.
+2. If `path` has a `foundry.toml` (or `foundry-diff: true`), runs your suite under today's rules and under Amsterdam execution rules (`forge test --hardfork amsterdam`), with `FOUNDRY_FFI=false`, and adds an error annotation for each test that flips.
+3. Writes a job summary, `glamcheck-results.json`, and optionally SARIF for GitHub code scanning.
+
+| input | default | meaning |
+|---|---|---|
+| `path` | `.` | directory to check |
+| `foundry-diff` | `auto` | `auto` runs the diff when `foundry.toml` exists; `true` or `false` to force |
+| `forge-args` | | extra `forge test` arguments |
+| `fail-on` | `flips` | `flips`, `hits` (any static hit or flip) or `none` |
+| `sarif-file` | | write SARIF here (upload with `github/codeql-action/upload-sarif`) |
+| `foundry-version` | `v1.8.5` | needs 1.8.5 or later |
+| `semgrep-version` | `1.177.0` | |
+
+Outputs: `hits`, `flips`, `results-file`. A full example workflow, with the SARIF upload, is in `docs/example-workflow.yml`.
+
+Static hits are candidates, not proof; the default `fail-on: flips` only fails the job on a measured flip. The Foundry diff runs your own tests in your own CI, with FFI off. Every third-party action this one uses is pinned to a commit.
 
 ## Rules
 

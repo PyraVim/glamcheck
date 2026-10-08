@@ -1,0 +1,33 @@
+# Example: .github/workflows/glamcheck.yml in a repository you want to check.
+# Static rules on every push and PR; the Foundry suite under Amsterdam rules when foundry.toml exists.
+name: glamcheck
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write # only needed for the SARIF upload step
+
+jobs:
+  glamcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive # Foundry projects usually vendor libs as submodules
+
+      - id: glamcheck
+        uses: PyraVim/glamcheck@<commit sha> # pin a commit, not a branch
+        with:
+          path: .
+          fail-on: flips # fail when a test passes today and fails under Amsterdam
+          sarif-file: glamcheck.sarif
+
+      - if: always() && steps.glamcheck.outputs.hits != '0'
+        uses: github/codeql-action/upload-sarif@9f759ee644a3e7c15c1390abf49868036c00067b # v3.38.3
+        with:
+          sarif_file: glamcheck.sarif
+          category: glamcheck
