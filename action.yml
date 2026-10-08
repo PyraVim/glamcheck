@@ -1,5 +1,5 @@
-name: glamcheck
-description: Find code that breaks under Ethereum's Glamsterdam gas repricing (EIP-8037, EIP-8038, EIP-2780), and run your Foundry suite under Amsterdam rules.
+name: Glamsterdam Readiness Check
+description: Find code that breaks under Ethereum's Glamsterdam gas repricing and test your Foundry suite under Amsterdam rules.
 author: PyraVim
 branding:
   icon: alert-triangle
