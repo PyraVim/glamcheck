@@ -20,7 +20,7 @@ jobs:
           submodules: recursive # Foundry projects usually vendor libs as submodules
 
       - id: glamcheck
-        uses: PyraVim/glamcheck@<commit sha> # pin a commit, not a branch
+        uses: PyraVim/glamcheck@v0.1.0 # pin a commit, not a branch
         with:
           path: .
           fail-on: flips # fail when a test passes today and fails under Amsterdam
