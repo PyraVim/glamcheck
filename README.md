@@ -19,14 +19,17 @@ Every number below was measured, not taken from the EIP tables.
 | ERC-4337: first use of a nonce key (EntryPoint v0.7 nonce update) vs a reused key | 98,657 more (17,134 more before the fork) | Sepolia node, eth_estimateGas of `incrementNonce` |
 | a 175,000-gas contract deployment that used 141,905 before the fork | estimates at 629,945 now | Sepolia node, eth_estimateGas |
 | cold SLOAD / warm SLOAD / cold BALANCE | 2,100 / 100 / 3,000 | Sepolia node opcode trace; same on Foundry 1.8.3 |
+| updating an existing storage slot (SSTORE, warm / cold) | 10,100 / 12,100 (was 2,900 / 5,000) | Sepolia node opcode trace |
 | Sepolia, same-length windows before vs after the fork | tx failure rate 1.91% to 10.97%; txs that burned their whole gas limit 0.15% to 2.02% | all Sepolia transactions, the first 10.5 hours after the fork against the 10.5 hours before |
 
-What tends to break, in order of how often we saw it:
+What tends to break:
 
 1. Fixed gas limits on state-creating transactions: deployments, factory calls, first writes to new storage.
 2. ETH sends with a fixed 21,000 gas limit to addresses that may not exist yet (faucets, payouts, airdrops).
 3. ERC-4337 apps that hardcode `verificationGasLimit` and open a new nonce key per userOp: in EntryPoint v0.7 the first use of a key writes a new storage slot inside the verification gas window, and the op fails with `AA26 over verificationGasLimit`.
 4. Hardcoded gas forwarded to calls (`{gas: N}`) whose callee writes new storage or deploys.
+5. Fixed gas limits on calls that update existing storage: under EIP-8038 each update of an existing slot costs about 7,200 more (10,100 instead of 2,900 warm), so calls with many writes outgrow limits that fit before (DEX swaps, Bee redistribution, bond claims).
+6. Token transfers sent with a fixed per-token gas limit: they fail when the recipient has never held the token, because the transfer writes a new balance slot (about 110,000 gas instead of 22,100). Transfers to existing holders still fit, so this only shows up for first-time recipients.
 
 Not seen to break: `.transfer()`/`.send()` to receivers that fit inside the 2,300 stipend today. Cold SLOAD did not change, and no such case flipped in our runs. The rule for it is kept for review only.
 
@@ -37,7 +40,7 @@ Not seen to break: `.transfer()`/`.send()` to receivers that fit inside the 2,30
 
 ## Requirements
 - Foundry 1.8.5 or later (`forge test --hardfork amsterdam`, `cast run --evm-version amsterdam`). Set `FOUNDRY_BIN` if forge is not on PATH.
-- semgrep with Solidity support.
+- semgrep Community Edition (the Solidity rules are tested with 1.177.0, the version the GitHub Action pins).
 - Node 20 or later, then `npm install`.
 
 ## Check your own repo
@@ -116,6 +119,8 @@ Each rule has positive and negative fixtures in `fixtures/rules/`. `npm test` ru
 - ethersphere/bee, fixed 175,000 chequebook deployment gas: https://github.com/ethersphere/bee/issues/5650
 - pk910/PoWFaucet, example config `ethTxGasLimit: 21000`: https://github.com/pk910/PoWFaucet/issues/540
 - wevm/viem, the default nonce key opens a new EntryPoint nonce slot on every userOp (Discussion): https://github.com/wevm/viem/discussions/5198
+- ethersphere/bee, redistribution commit/reveal fall back to a 500,000 gas floor: https://github.com/ethersphere/bee/issues/5652
+- succinctlabs/op-succinct, `claimCredit` sent with a fixed 200,000 gas limit: https://github.com/succinctlabs/op-succinct/issues/1016
 
 ## Contact
 Need your code checked before mainnet? I do fixed-price Glamsterdam readiness checks: I find what breaks in your contracts, scripts and gas settings, measure it on a real node, and send the fix with tests.
