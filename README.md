@@ -77,7 +77,7 @@ Scanning or building someone else's repository runs their code: do it in a sandb
 - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
   with:
     submodules: recursive
-- uses: PyraVim/glamcheck@v0.1.0
+- uses: PyraVim/glamcheck@v0.1.1
   with:
     fail-on: flips
 ```
