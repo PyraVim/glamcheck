@@ -115,12 +115,18 @@ Static hits are candidates, not proof; the default `fail-on: flips` only fails t
 Each rule has positive and negative fixtures in `fixtures/rules/`. `npm test` runs the rule tests and the Foundry diff tests.
 
 ## Upstream issues
-- Foundry, anvil estimate for transfers to new accounts: https://github.com/foundry-rs/foundry/issues/17428 (fixed in https://github.com/foundry-rs/foundry/pull/17432, merged Oct 7)
-- ethersphere/bee, fixed 175,000 chequebook deployment gas: https://github.com/ethersphere/bee/issues/5650
-- pk910/PoWFaucet, example config `ethTxGasLimit: 21000`: https://github.com/pk910/PoWFaucet/issues/540
-- wevm/viem, the default nonce key opens a new EntryPoint nonce slot on every userOp (Discussion): https://github.com/wevm/viem/discussions/5198
-- ethersphere/bee, redistribution commit/reveal fall back to a 500,000 gas floor: https://github.com/ethersphere/bee/issues/5652
-- succinctlabs/op-succinct, `claimCredit` sent with a fixed 200,000 gas limit: https://github.com/succinctlabs/op-succinct/issues/1016
+
+Status checked on **2026-10-26**. These are issue and upstream merge statuses; they do not establish that every fix is in a published release or deployed by operators.
+
+| Report | Status | Upstream update |
+|---|---|---|
+| [Foundry #17428](https://github.com/foundry-rs/foundry/issues/17428): anvil gas estimates for transfers to new accounts | Fixed; closed Oct 7 | [#17432](https://github.com/foundry-rs/foundry/pull/17432) merged Oct 7; transfers are executed during estimation so new-account state gas is included. |
+| [Bee #5650](https://github.com/ethersphere/bee/issues/5650): fixed 175,000 chequebook deployment gas | Open; assigned | Assigned to `sbackend123`; no comments or fix confirmation on the issue as of the check date. |
+| [PoWFaucet #540](https://github.com/pk910/PoWFaucet/issues/540): example config `ethTxGasLimit: 21000` | Fixed; closed Oct 17 | Config updates merged in [#541](https://github.com/pk910/PoWFaucet/pull/541) on Oct 12. The [maintainer confirmed](https://github.com/pk910/PoWFaucet/issues/540#issuecomment-6125382634) the Sepolia instance was also fixed. |
+| [Bee #5652](https://github.com/ethersphere/bee/issues/5652): redistribution commit/reveal 500,000 gas floor | Closed Oct 10; maintainer reports fixed | The [maintainer confirmed](https://github.com/ethersphere/bee/issues/5652#issuecomment-6101282575) the fix was merged to `master`. |
+| [OP Succinct #1016](https://github.com/succinctlabs/op-succinct/issues/1016): fixed 200,000 gas for `claimCredit` | Fixed; closed Oct 14 | Gas estimation fixes merged Oct 14 into `main` ([#1018](https://github.com/succinctlabs/op-succinct/pull/1018)) and `release/v3.x` ([#1019](https://github.com/succinctlabs/op-succinct/pull/1019)). |
+
+Related discussion: [wevm/viem #5198](https://github.com/wevm/viem/discussions/5198), the default nonce key opens a new EntryPoint nonce slot on every userOp.
 
 ## Contact
 Need your code checked before mainnet? I do fixed-price Glamsterdam readiness checks: I find what breaks in your contracts, scripts and gas settings, measure it on a real node, and send the fix with tests.
